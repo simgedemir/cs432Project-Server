@@ -39,27 +39,30 @@
             // 
             // logs
             // 
-            this.logs.Location = new System.Drawing.Point(390, 58);
+            this.logs.Location = new System.Drawing.Point(196, 27);
+            this.logs.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.logs.Name = "logs";
-            this.logs.Size = new System.Drawing.Size(338, 550);
+            this.logs.Size = new System.Drawing.Size(171, 288);
             this.logs.TabIndex = 1;
             this.logs.Text = "";
             // 
             // textBox2
             // 
             this.textBox2.Enabled = false;
-            this.textBox2.Location = new System.Drawing.Point(126, 430);
+            this.textBox2.Location = new System.Drawing.Point(73, 119);
+            this.textBox2.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.textBox2.Name = "textBox2";
-            this.textBox2.Size = new System.Drawing.Size(196, 31);
+            this.textBox2.Size = new System.Drawing.Size(100, 20);
             this.textBox2.TabIndex = 2;
             this.textBox2.TextChanged += new System.EventHandler(this.textBox2_TextChanged);
             // 
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(63, 433);
+            this.label2.Location = new System.Drawing.Point(42, 120);
+            this.label2.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(57, 25);
+            this.label2.Size = new System.Drawing.Size(29, 13);
             this.label2.TabIndex = 4;
             this.label2.Text = "Port:";
             this.label2.Click += new System.EventHandler(this.label2_Click);
@@ -67,9 +70,10 @@
             // listenButton
             // 
             this.listenButton.Enabled = false;
-            this.listenButton.Location = new System.Drawing.Point(148, 500);
+            this.listenButton.Location = new System.Drawing.Point(84, 155);
+            this.listenButton.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.listenButton.Name = "listenButton";
-            this.listenButton.Size = new System.Drawing.Size(158, 62);
+            this.listenButton.Size = new System.Drawing.Size(79, 32);
             this.listenButton.TabIndex = 5;
             this.listenButton.Text = "Listen";
             this.listenButton.UseVisualStyleBackColor = true;
@@ -77,34 +81,38 @@
             // 
             // passwordBox
             // 
-            this.passwordBox.Location = new System.Drawing.Point(126, 188);
+            this.passwordBox.Location = new System.Drawing.Point(73, 30);
+            this.passwordBox.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.passwordBox.Name = "passwordBox";
-            this.passwordBox.Size = new System.Drawing.Size(196, 31);
+            this.passwordBox.Size = new System.Drawing.Size(100, 20);
             this.passwordBox.TabIndex = 6;
             // 
             // password
             // 
             this.password.AutoSize = true;
-            this.password.Location = new System.Drawing.Point(8, 188);
+            this.password.Location = new System.Drawing.Point(14, 30);
+            this.password.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.password.Name = "password";
-            this.password.Size = new System.Drawing.Size(112, 25);
+            this.password.Size = new System.Drawing.Size(56, 13);
             this.password.TabIndex = 7;
             this.password.Text = "Password:";
             // 
             // sendButton
             // 
-            this.sendButton.Location = new System.Drawing.Point(148, 254);
+            this.sendButton.Location = new System.Drawing.Point(84, 64);
+            this.sendButton.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.sendButton.Name = "sendButton";
-            this.sendButton.Size = new System.Drawing.Size(158, 48);
+            this.sendButton.Size = new System.Drawing.Size(79, 25);
             this.sendButton.TabIndex = 8;
             this.sendButton.Text = "Send";
             this.sendButton.UseVisualStyleBackColor = true;
+            this.sendButton.Click += new System.EventHandler(this.sendButton_Click);
             // 
             // Form1
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(778, 787);
+            this.ClientSize = new System.Drawing.Size(389, 328);
             this.Controls.Add(this.sendButton);
             this.Controls.Add(this.password);
             this.Controls.Add(this.passwordBox);
@@ -112,6 +120,7 @@
             this.Controls.Add(this.label2);
             this.Controls.Add(this.textBox2);
             this.Controls.Add(this.logs);
+            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.Name = "Form1";
             this.Text = "Form1";
             this.ResumeLayout(false);
