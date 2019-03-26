@@ -1,0 +1,8 @@
+c:\users\simgedemir\documents\visual studio 2015\Projects\432project_server\432project_server\bin\Debug\432project_server.exe.config
+C:\Users\simgedemir\Documents\Visual Studio 2015\Projects\432project_server\432project_server\bin\Debug\432project_server.exe
+C:\Users\simgedemir\Documents\Visual Studio 2015\Projects\432project_server\432project_server\bin\Debug\432project_server.pdb
+C:\Users\simgedemir\Documents\Visual Studio 2015\Projects\432project_server\432project_server\obj\Debug\_432project_server.Form1.resources
+C:\Users\simgedemir\Documents\Visual Studio 2015\Projects\432project_server\432project_server\obj\Debug\_432project_server.Properties.Resources.resources
+C:\Users\simgedemir\Documents\Visual Studio 2015\Projects\432project_server\432project_server\obj\Debug\432project_server.csproj.GenerateResource.Cache
+C:\Users\simgedemir\Documents\Visual Studio 2015\Projects\432project_server\432project_server\obj\Debug\432project_server.exe
+C:\Users\simgedemir\Documents\Visual Studio 2015\Projects\432project_server\432project_server\obj\Debug\432project_server.pdb
