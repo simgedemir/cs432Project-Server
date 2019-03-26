@@ -47,6 +47,7 @@
             // 
             // textBox2
             // 
+            this.textBox2.Enabled = false;
             this.textBox2.Location = new System.Drawing.Point(126, 430);
             this.textBox2.Name = "textBox2";
             this.textBox2.Size = new System.Drawing.Size(196, 31);
@@ -65,6 +66,7 @@
             // 
             // listenButton
             // 
+            this.listenButton.Enabled = false;
             this.listenButton.Location = new System.Drawing.Point(148, 500);
             this.listenButton.Name = "listenButton";
             this.listenButton.Size = new System.Drawing.Size(158, 62);
