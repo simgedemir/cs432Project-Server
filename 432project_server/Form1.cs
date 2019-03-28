@@ -95,6 +95,7 @@ namespace _432project_server
 
         private void sendButton_Click(object sender, EventArgs e)
         {
+         
             string password = passwordBox.Text;
             //Get password & decrypt RSA keys.
             string RSAkeys, publicKey;
@@ -113,10 +114,11 @@ namespace _432project_server
             byte[] key = new byte[16];
             byte[] IV = new byte[16];
 
-            Array.Copy(hashedPass,key, 16);
+            Array.Copy(hashedPass, key, 16);
             Array.Copy(hashedPass, 16, IV, 0, 16);
-            byte[] result = decryptWithAES128(RSAkeys, key, IV);
 
+            byte[] result = decryptWithAES128(RSAkeys, key, IV);
+         
             
         }
 

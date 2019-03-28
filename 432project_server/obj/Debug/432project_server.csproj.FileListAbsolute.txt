@@ -15,3 +15,4 @@ C:\Users\User\Documents\Visual Studio 2015\Projects\cs432Project-Server\432proje
 C:\Users\User\Documents\Visual Studio 2015\Projects\cs432Project-Server\432project_server\obj\Debug\_432project_server.Form1.resources
 C:\Users\User\Documents\Visual Studio 2015\Projects\cs432Project-Server\432project_server\obj\Debug\_432project_server.Properties.Resources.resources
 C:\Users\User\Documents\Visual Studio 2015\Projects\cs432Project-Server\432project_server\obj\Debug\432project_server.csproj.GenerateResource.Cache
+C:\Users\simgedemir\Documents\Visual Studio 2015\Projects\432project_server\432project_server\obj\Debug\432project_server.csprojResolveAssemblyReference.cache
