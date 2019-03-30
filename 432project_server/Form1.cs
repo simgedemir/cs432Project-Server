@@ -21,6 +21,8 @@ namespace _432project_server
         bool listening = false;
         Socket serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         List<Socket> socketList = new List<Socket>();
+        static List<String> usernames = new List<String>();
+        byte[] result;
         public Form1()
         {
             Control.CheckForIllegalCrossThreadCalls = false;
@@ -73,10 +75,26 @@ namespace _432project_server
             {
                 try
                 {
-                    socketList.Add(serverSocket.Accept());
-                    logs.AppendText("A client is connected \n");
+                    Socket newclient = serverSocket.Accept();
+                    socketList.Add(newclient);
+                    logs.AppendText("A client has been connected \n");
+                    try
+                    {
+                        Byte[] buffer = new Byte[256];
+                        newclient.Receive(buffer);
+                        string incomingMessage = Encoding.Default.GetString(buffer).TrimEnd('\0');
+                        byte[] decryptedMessage = decryptWithRSA(incomingMessage, 3072, generateHexStringFromByteArray(result));
+                        // here decrypted message includes username and hash of the half password
+                        // they should be seperated
+                        // append to a dictionary
+                        //string username;
+                        //string hashedpass;
 
-          
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                    }
                 }
                 catch
                 {
@@ -87,7 +105,7 @@ namespace _432project_server
                     }
                     else
                     {
-                        logs.AppendText("The socket stopped working \n");
+                        logs.AppendText("The server stopped working \n");
                     }
                 }
             }
@@ -113,22 +131,43 @@ namespace _432project_server
             byte[] hashedPass = hashWithSHA256(password);
             byte[] key = new byte[16];
             byte[] IV = new byte[16];
-
-            Array.Copy(hashedPass, key, 16);
-            Array.Copy(hashedPass, 16, IV, 0, 16);
-
-            byte[] result = decryptWithAES128(RSAkeys, key, IV);
-         
             
+           
+            Array.Copy(hashedPass,0, IV, 0, 16);
+            Array.Copy(hashedPass, 16,key, 0, 16);
+            
+         
+            result = decryptWithAES128(Encoding.Default.GetString(hexStringToByteArray(RSAkeys)), key, IV);
+            if (result == null)
+                logs.AppendText("Please give another password.\n");
+            else
+            {
+                listenButton.Enabled = true;
+                textBox2.Enabled = true;
+            }
+                
         }
-
-
-        public static string generateHexStringFromByteArray(byte[] input)
+        static byte[] decryptWithRSA(string input, int algoLength, string xmlStringKey)
         {
-            string hexString = BitConverter.ToString(input);
-            return hexString.Replace("-", "");
-        }
+            // convert input string to byte array
+            byte[] byteInput = Encoding.Default.GetBytes(input);
+            // create RSA object from System.Security.Cryptography
+            RSACryptoServiceProvider rsaObject = new RSACryptoServiceProvider(algoLength);
+            // set RSA object with xml string
+            rsaObject.FromXmlString(xmlStringKey);
+            byte[] result = null;
 
+            try
+            {
+                result = rsaObject.Decrypt(byteInput, true);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+
+            return result;
+        }
         public static byte[] hexStringToByteArray(string hex)
         {
             int numberChars = hex.Length;
@@ -136,6 +175,11 @@ namespace _432project_server
             for (int i = 0; i < numberChars; i += 2)
                 bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
             return bytes;
+        }
+        public static string generateHexStringFromByteArray(byte[] input)
+        {
+            string hexString = BitConverter.ToString(input);
+            return hexString.Replace("-", "");
         }
 
         static byte[] decryptWithAES128(string input, byte[] key, byte[] IV)
