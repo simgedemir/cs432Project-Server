@@ -21,8 +21,10 @@ namespace _432project_server
         bool listening = false;
         Socket serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         List<Socket> socketList = new List<Socket>();
-        static List<String> usernames = new List<String>();
+        static Dictionary<String, String> users = new Dictionary<string, string>(); // Username, Password
+
         byte[] result;
+        String keys;
         public Form1()
         {
             Control.CheckForIllegalCrossThreadCalls = false;
@@ -80,16 +82,42 @@ namespace _432project_server
                     logs.AppendText("A client has been connected \n");
                     try
                     {
-                        Byte[] buffer = new Byte[256];
+                        Byte[] buffer = new Byte[384]; //FROM CLIENT THE MESSAGE SIZE IS 384 BITS. THIS MAY EVEN GET BIGGER
                         newclient.Receive(buffer);
-                        string incomingMessage = Encoding.Default.GetString(buffer).TrimEnd('\0');
-                        byte[] decryptedMessage = decryptWithRSA(incomingMessage, 3072, generateHexStringFromByteArray(result));
+                        string incomingMessage = Encoding.Default.GetString(buffer); // encrypted RSA message output
+
+                        byte[] decryptedMessage = decryptWithRSA(incomingMessage, 3072, keys);
                         // here decrypted message includes username and hash of the half password
                         // they should be seperated
                         // append to a dictionary
-                        //string username;
-                        //string hashedpass;
+                        string messageAsString = Encoding.Default.GetString(decryptedMessage);
+                        
+                        string hashedpass = messageAsString.Substring(0, 16);
+                        string username = messageAsString.Substring(16);
 
+                        if (users.ContainsKey(username)) //if user(key) exists in dictionary, check the hashedpass
+                        {
+                            string pass = users[username];
+                            if (pass.Equals(hashedpass))
+                            {
+                                //Send success & keep connection
+                                buffer = Encoding.Default.GetBytes("Success");
+                                serverSocket.Send(buffer);
+                            }
+                            else
+                            {
+                                //Send error & close connection
+                                buffer = Encoding.Default.GetBytes("Error");
+                                socketList.RemoveAt(socketList.Count - 1);
+                            }
+                        }                         
+                        else
+                        {
+                            //Send success & keep connection & add user to dict
+                            users.Add(username, hashedpass); // add user to dict
+                            buffer = Encoding.Default.GetBytes("Success");
+                            serverSocket.Send(buffer);
+                        }
                     }
                     catch (Exception e)
                     {
@@ -142,6 +170,9 @@ namespace _432project_server
                 logs.AppendText("Please give another password.\n");
             else
             {
+                logs.AppendText("Password accepted.\n");
+                keys = Encoding.Default.GetString(result);
+               
                 listenButton.Enabled = true;
                 textBox2.Enabled = true;
             }
