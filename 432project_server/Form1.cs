@@ -94,7 +94,7 @@ namespace _432project_server
                         
                         string hashedpass = messageAsString.Substring(0, 16);
                         string username = messageAsString.Substring(16);
-
+                        Socket client = socketList[socketList.Count-1];
                         if (users.ContainsKey(username)) //if user(key) exists in dictionary, check the hashedpass
                         {
                             string pass = users[username];
@@ -102,12 +102,13 @@ namespace _432project_server
                             {
                                 //Send success & keep connection
                                 buffer = Encoding.Default.GetBytes("Success");
-                                serverSocket.Send(buffer);
+                                client.Send(buffer);
                             }
                             else
                             {
                                 //Send error & close connection
                                 buffer = Encoding.Default.GetBytes("Error");
+                                client.Send(buffer);
                                 socketList.RemoveAt(socketList.Count - 1);
                             }
                         }                         
@@ -116,7 +117,7 @@ namespace _432project_server
                             //Send success & keep connection & add user to dict
                             users.Add(username, hashedpass); // add user to dict
                             buffer = Encoding.Default.GetBytes("Success");
-                            serverSocket.Send(buffer);
+                            client.Send(buffer);
                         }
                     }
                     catch (Exception e)
