@@ -21,7 +21,7 @@ namespace _432project_server
             }
             catch(Exception e)
             {
-                Console.Write("Socekt Exception");
+                Console.Write("Socket Exception: "+ e);
             }
         }
     }

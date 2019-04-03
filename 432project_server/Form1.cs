@@ -21,15 +21,20 @@ namespace _432project_server
         bool listening = false;
         Socket serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         List<Socket> socketList = new List<Socket>();
-        static Dictionary<String, String> users = new Dictionary<string, string>(); // Username, Password
+        static Dictionary<string, string> users = new Dictionary<string, string>(); // Username, Password
 
-        byte[] result;
-        String keys;
+      
+        string keys;
+
+        string RsaSignKeys; // decrypyed signature keys xml string
+        string RsaPubPrivKeys; // RSA public & private key xml string
+
         public Form1()
         {
             Control.CheckForIllegalCrossThreadCalls = false;
             this.FormClosing += new FormClosingEventHandler(Form1_FormClosing);
             InitializeComponent();
+           
         }
 
 
@@ -82,7 +87,7 @@ namespace _432project_server
                     logs.AppendText("A client has been connected \n");
                     try
                     {
-                        Byte[] buffer = new Byte[384]; //FROM CLIENT THE MESSAGE SIZE IS 384 BITS. THIS MAY EVEN GET BIGGER
+                        Byte[] buffer = new Byte[384]; //FROM CLIENT THE INCOMING MESSAGE SIZE IS 384 BITS. THIS MAY EVEN GET BIGGER
                         newclient.Receive(buffer);
                         string incomingMessage = Encoding.Default.GetString(buffer); // encrypted RSA message output
 
@@ -95,14 +100,24 @@ namespace _432project_server
                         string hashedpass = messageAsString.Substring(0, 16);
                         string username = messageAsString.Substring(16);
                         Socket client = socketList[socketList.Count-1];
+                        
+                        /////////////////////////////////////////////////////////////////////////////////////////////////////
+                        /*  TODO: In here I don't understand what to send?? Signature with the message or only the signature
+                            Either way the client still cannot verify.
+                        */
+                        /////////////////////////////////////////////////////////////////////////////////////////////////////
+
                         if (users.ContainsKey(username)) //if user(key) exists in dictionary, check the hashedpass
                         {
                             string pass = users[username];
                             if (pass.Equals(hashedpass))
                             {
+                                //Sign the response message
+                                string response = "Success";
+                                byte[] signature = signWithRSA(response, 3072, RsaSignKeys);
+
                                 //Send success & keep connection
-                                buffer = Encoding.Default.GetBytes("Success");
-                                client.Send(buffer);
+                                client.Send(signature);
                             }
                             else
                             {
@@ -116,13 +131,14 @@ namespace _432project_server
                         {
                             //Send success & keep connection & add user to dict
                             users.Add(username, hashedpass); // add user to dict
-                            buffer = Encoding.Default.GetBytes("Success");
-                            client.Send(buffer);
+                            string response = "Success";
+                            byte[] signature = signWithRSA(response, 3072, RsaSignKeys);
+                            client.Send(signature);
                         }
                     }
                     catch (Exception e)
                     {
-                        Console.WriteLine(e);
+                        Console.WriteLine("Cannot sign: " + e);
                     }
                 }
                 catch
@@ -142,31 +158,43 @@ namespace _432project_server
 
         private void sendButton_Click(object sender, EventArgs e)
         {
-         
             string password = passwordBox.Text;
-            //Get password & decrypt RSA keys.
-            string RSAkeys, publicKey;
-            using (System.IO.StreamReader fileReader =
-            new System.IO.StreamReader("encrypted_server_enc_dec_pub_prv.txt"))
-            {
-                RSAkeys = fileReader.ReadLine();
-            }
-            using (System.IO.StreamReader fileReader =
-            new System.IO.StreamReader("server_enc_dec_pub.txt"))
-            {
-                publicKey = fileReader.ReadLine();
-            }
-
             byte[] hashedPass = hashWithSHA256(password);
             byte[] key = new byte[16];
             byte[] IV = new byte[16];
+            Array.Copy(hashedPass, 0, IV, 0, 16);
+            Array.Copy(hashedPass, 16, key, 0, 16);
+
+
+            string RSAkeys = null;
+            //read keys only once
+            if (RsaPubPrivKeys == null) { 
+                using (System.IO.StreamReader fileReader =
+                new System.IO.StreamReader("encrypted_server_enc_dec_pub_prv.txt"))
+                {
+                    RSAkeys = fileReader.ReadLine();
+                }
+            }
             
-           
-            Array.Copy(hashedPass,0, IV, 0, 16);
-            Array.Copy(hashedPass, 16,key, 0, 16);
-            
-         
-            result = decryptWithAES128(Encoding.Default.GetString(hexStringToByteArray(RSAkeys)), key, IV);
+            string RSAsignaturekey = null;
+            //Signature key
+            if (RsaSignKeys == null)
+            {
+                using (System.IO.StreamReader fileReader =
+                new System.IO.StreamReader("encrypted_server_signing_verification_pub_prv.txt"))
+                {
+                    RSAsignaturekey = fileReader.ReadLine();
+                }
+            }
+
+            //RSA public/private key decryption
+            byte[] result = decryptWithAES128(Encoding.Default.GetString(hexStringToByteArray(RSAkeys)), key, IV);
+            RsaPubPrivKeys = Encoding.Default.GetString(result);
+
+            //RSA signature key decryption
+            byte[] result_sign = decryptWithAES128(Encoding.Default.GetString(hexStringToByteArray(RSAsignaturekey)), key, IV);
+            RsaSignKeys = Encoding.Default.GetString(result_sign);
+
             if (result == null)
                 logs.AppendText("Please give another password.\n");
             else
@@ -200,6 +228,7 @@ namespace _432project_server
 
             return result;
         }
+
         public static byte[] hexStringToByteArray(string hex)
         {
             int numberChars = hex.Length;
@@ -208,6 +237,7 @@ namespace _432project_server
                 bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
             return bytes;
         }
+
         public static string generateHexStringFromByteArray(byte[] input)
         {
             string hexString = BitConverter.ToString(input);
@@ -249,7 +279,6 @@ namespace _432project_server
             return result;
         }
 
-
         static byte[] hashWithSHA256(string input)
         {
             // convert input string to byte array
@@ -258,6 +287,28 @@ namespace _432project_server
             SHA256CryptoServiceProvider sha256Hasher = new SHA256CryptoServiceProvider();
             // hash and save the resulting byte array
             byte[] result = sha256Hasher.ComputeHash(byteInput);
+
+            return result;
+        }
+
+        static byte[] signWithRSA(string input, int algoLength, string xmlString)
+        {
+            // convert input string to byte array
+            byte[] byteInput = Encoding.Default.GetBytes(input);
+            // create RSA object from System.Security.Cryptography
+            RSACryptoServiceProvider rsaObject = new RSACryptoServiceProvider(algoLength);
+            // set RSA object with xml string
+            rsaObject.FromXmlString(xmlString);
+            byte[] result = null;
+
+            try
+            {
+                result = rsaObject.SignData(byteInput, "SHA256");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
 
             return result;
         }
