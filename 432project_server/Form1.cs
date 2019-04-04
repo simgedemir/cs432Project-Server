@@ -141,7 +141,7 @@ namespace _432project_server
                         Console.WriteLine("Cannot sign: " + e);
                     }
                 }
-                catch
+                catch // Client disconnected error
                 {
                     if (terminating)
                     {
