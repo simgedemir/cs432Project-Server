@@ -23,7 +23,7 @@ namespace _432project_server
         List<Socket> socketList = new List<Socket>();
         static Dictionary<string, string> users = new Dictionary<string, string>(); // Username, Password
 
-      
+
         string keys;
 
         string RsaSignKeys; // decrypyed signature keys xml string
@@ -34,7 +34,7 @@ namespace _432project_server
             Control.CheckForIllegalCrossThreadCalls = false;
             this.FormClosing += new FormClosingEventHandler(Form1_FormClosing);
             InitializeComponent();
-           
+
         }
 
 
@@ -62,7 +62,7 @@ namespace _432project_server
             if (Int32.TryParse(textBox2.Text, out serverPort))
             {
                 serverSocket.Bind(new IPEndPoint(IPAddress.Any, serverPort));
-                serverSocket.Listen(3);
+                serverSocket.Listen(10);
 
                 listening = true;
                 listenButton.Enabled = false;
@@ -83,7 +83,8 @@ namespace _432project_server
                 try
                 {
                     Socket newclient = serverSocket.Accept();
-                    socketList.Add(newclient);
+                    if (socketList.Contains(newclient) == false)
+                        socketList.Add(newclient);
                     logs.AppendText("A client has been connected \n");
                     try
                     {
@@ -94,6 +95,9 @@ namespace _432project_server
 
                         if (incomingMessage.Contains("Authenticate"))
                         {
+                            int index = incomingMessage.IndexOf("Authenticate");
+                            string username = incomingMessage.Substring(index);
+                            
                             // challenge protocol initiate
                             //Random r = new Random();
                             byte[] bytes = new byte[16];
@@ -102,9 +106,7 @@ namespace _432project_server
                                 rng.GetBytes(bytes);
                             }
                             newclient.Send(bytes);
-
                         }
-
                         else
                         {
                             byte[] decryptedMessage = decryptWithRSA(incomingMessage, 3072, keys);
@@ -120,29 +122,15 @@ namespace _432project_server
                             if (users.ContainsKey(username)) //if user(key) exists in dictionary, check the hashedpass
                             {
                                 string pass = users[username];
-                                if (pass.Equals(hashedpass))
-                                {
-                                    //Sign the response message
-                                    string response = "SuccessLogin";
-                                    byte[] signature = signWithRSA(response, 3072, RsaSignKeys);
-                                    string signedResponse = Encoding.Default.GetString(signature);
-                                    buffer = Encoding.Default.GetBytes(signedResponse + response);
-                                    //Send success & keep connection
-                                    client.Send(buffer);
-                                }
-                                else
-                                {
-                                    //Send error & close connection
+                                //Send error & close connection
+                                string response = "Error";
+                                byte[] signature = signWithRSA(response, 3072, RsaSignKeys);
+                                string signedResponse = Encoding.Default.GetString(signature);
+                                buffer = Encoding.Default.GetBytes(signedResponse + response);
+                                //Send success & keep connection       
 
-                                    string response = "Error";
-                                    byte[] signature = signWithRSA(response, 3072, RsaSignKeys);
-                                    string signedResponse = Encoding.Default.GetString(signature);
-                                    buffer = Encoding.Default.GetBytes(signedResponse + response);
-                                    //Send success & keep connection       
-
-                                    client.Send(buffer);
-                                    socketList.RemoveAt(socketList.Count - 1);
-                                }
+                                client.Send(buffer);
+                                socketList.RemoveAt(socketList.Count - 1);
                             }
                             else
                             {
@@ -190,14 +178,15 @@ namespace _432project_server
 
             string RSAkeys = null;
             //read keys only once
-            if (RsaPubPrivKeys == null) { 
+            if (RsaPubPrivKeys == null)
+            {
                 using (System.IO.StreamReader fileReader =
                 new System.IO.StreamReader("encrypted_server_enc_dec_pub_prv.txt"))
                 {
                     RSAkeys = fileReader.ReadLine();
                 }
             }
-            
+
             string RSAsignaturekey = null;
             //Signature key
             if (RsaSignKeys == null)
@@ -223,11 +212,11 @@ namespace _432project_server
             {
                 logs.AppendText("Password accepted.\n");
                 keys = Encoding.Default.GetString(result);
-               
+
                 listenButton.Enabled = true;
                 textBox2.Enabled = true;
             }
-                
+
         }
         static byte[] decryptWithRSA(string input, int algoLength, string xmlStringKey)
         {
