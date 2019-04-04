@@ -87,53 +87,75 @@ namespace _432project_server
                     logs.AppendText("A client has been connected \n");
                     try
                     {
-                        Byte[] buffer = new Byte[384]; //FROM CLIENT THE INCOMING MESSAGE SIZE IS 384 BITS. THIS MAY EVEN GET BIGGER
+                        Byte[] buffer = new Byte[512]; //FROM CLIENT THE INCOMING MESSAGE SIZE IS 384 BITS. THIS MAY EVEN GET BIGGER
                         newclient.Receive(buffer);
                         string incomingMessage = Encoding.Default.GetString(buffer); // encrypted RSA message output
+                        incomingMessage = incomingMessage.TrimEnd('\0');
 
-                        byte[] decryptedMessage = decryptWithRSA(incomingMessage, 3072, keys);
-                        // here decrypted message includes username and hash of the half password
-                        // they should be seperated
-                        // append to a dictionary
-                        string messageAsString = Encoding.Default.GetString(decryptedMessage);
-                        
-                        string hashedpass = messageAsString.Substring(0, 16);
-                        string username = messageAsString.Substring(16);
-                        Socket client = socketList[socketList.Count-1];
-                        
-                        /////////////////////////////////////////////////////////////////////////////////////////////////////
-                        /*  TODO: In here I don't understand what to send?? Signature with the message or only the signature
-                            Either way the client still cannot verify.
-                        */
-                        /////////////////////////////////////////////////////////////////////////////////////////////////////
-
-                        if (users.ContainsKey(username)) //if user(key) exists in dictionary, check the hashedpass
+                        if (incomingMessage.Contains("Authenticate"))
                         {
-                            string pass = users[username];
-                            if (pass.Equals(hashedpass))
+                            // challenge protocol initiate
+                            //Random r = new Random();
+                            byte[] bytes = new byte[16];
+                            using (var rng = new RNGCryptoServiceProvider())
                             {
-                                //Sign the response message
-                                string response = "Success";
-                                byte[] signature = signWithRSA(response, 3072, RsaSignKeys);
+                                rng.GetBytes(bytes);
+                            }
+                            newclient.Send(bytes);
 
-                                //Send success & keep connection
-                                client.Send(signature);
+                        }
+
+                        else
+                        {
+                            byte[] decryptedMessage = decryptWithRSA(incomingMessage, 3072, keys);
+                            // here decrypted message includes username and hash of the half password
+                            // they should be seperated
+                            // append to a dictionary
+                            string messageAsString = Encoding.Default.GetString(decryptedMessage);
+
+                            string hashedpass = messageAsString.Substring(0, 16);
+                            string username = messageAsString.Substring(16);
+                            Socket client = socketList[socketList.Count - 1];
+
+                            if (users.ContainsKey(username)) //if user(key) exists in dictionary, check the hashedpass
+                            {
+                                string pass = users[username];
+                                if (pass.Equals(hashedpass))
+                                {
+                                    //Sign the response message
+                                    string response = "SuccessLogin";
+                                    byte[] signature = signWithRSA(response, 3072, RsaSignKeys);
+                                    string signedResponse = Encoding.Default.GetString(signature);
+                                    buffer = Encoding.Default.GetBytes(signedResponse + response);
+                                    //Send success & keep connection
+                                    client.Send(buffer);
+                                }
+                                else
+                                {
+                                    //Send error & close connection
+
+                                    string response = "Error";
+                                    byte[] signature = signWithRSA(response, 3072, RsaSignKeys);
+                                    string signedResponse = Encoding.Default.GetString(signature);
+                                    buffer = Encoding.Default.GetBytes(signedResponse + response);
+                                    //Send success & keep connection       
+
+                                    client.Send(buffer);
+                                    socketList.RemoveAt(socketList.Count - 1);
+                                }
                             }
                             else
                             {
-                                //Send error & close connection
-                                buffer = Encoding.Default.GetBytes("Error");
+                                //Send success & keep connection & add user to dict
+                                users.Add(username, hashedpass); // add user to dict
+                                string response = "SuccessEnrolled";
+                                byte[] signature = signWithRSA(response, 3072, RsaSignKeys);
+                                string signedResponse = Encoding.Default.GetString(signature);
+                                buffer = Encoding.Default.GetBytes(signedResponse + response);
+                                int len = signedResponse.Length;
+                                //Send success & keep connection
                                 client.Send(buffer);
-                                socketList.RemoveAt(socketList.Count - 1);
                             }
-                        }                         
-                        else
-                        {
-                            //Send success & keep connection & add user to dict
-                            users.Add(username, hashedpass); // add user to dict
-                            string response = "Success";
-                            byte[] signature = signWithRSA(response, 3072, RsaSignKeys);
-                            client.Send(signature);
                         }
                     }
                     catch (Exception e)
@@ -141,12 +163,12 @@ namespace _432project_server
                         Console.WriteLine("Cannot sign: " + e);
                     }
                 }
-                catch // Client disconnected error
+                catch // TODO: Client disconnected error
                 {
                     if (terminating)
                     {
                         listening = false;
-                        logs.AppendText("Client is disconnected \n"); //username display
+                        logs.AppendText("Client is disconnected \n"); //TODO: username display
                     }
                     else
                     {
