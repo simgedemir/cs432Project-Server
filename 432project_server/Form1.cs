@@ -273,24 +273,30 @@ namespace _432project_server
             }
 
             //RSA public/private key decryption
-            byte[] result = decryptWithAES128(Encoding.Default.GetString(hexStringToByteArray(RSAkeys)), key, IV);
-            RsaPubPrivKeys = Encoding.Default.GetString(result);
-
-            //RSA signature key decryption
-            byte[] result_sign = decryptWithAES128(Encoding.Default.GetString(hexStringToByteArray(RSAsignaturekey)), key, IV);
-            RsaSignKeys = Encoding.Default.GetString(result_sign);
-
-            if (result == null)
-                logs.AppendText("Please give another password.\n");
-            else
+            try
             {
-                logs.AppendText("Password accepted.\n");
-                keys = Encoding.Default.GetString(result);
+                byte[] result = decryptWithAES128(Encoding.Default.GetString(hexStringToByteArray(RSAkeys)), key, IV);
+                RsaPubPrivKeys = Encoding.Default.GetString(result);
 
-                listenButton.Enabled = true;
-                textBox2.Enabled = true;
+                //RSA signature key decryption
+                byte[] result_sign = decryptWithAES128(Encoding.Default.GetString(hexStringToByteArray(RSAsignaturekey)), key, IV);
+                RsaSignKeys = Encoding.Default.GetString(result_sign);
+
+                if (result == null)
+                    logs.AppendText("Please give another password.\n");
+                else
+                {
+                    logs.AppendText("Password accepted.\n");
+                    keys = Encoding.Default.GetString(result);
+
+                    listenButton.Enabled = true;
+                    textBox2.Enabled = true;
+                }
             }
-
+            catch
+            {
+                logs.AppendText(" Please give another password.\n");
+            }
         }
         static byte[] decryptWithRSA(string input, int algoLength, string xmlStringKey)
         {
