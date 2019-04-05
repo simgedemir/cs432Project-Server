@@ -160,7 +160,10 @@ namespace _432project_server
                                 buffer = Encoding.Default.GetBytes(signedResponse + message);
                                 client.Send(buffer);
                                 if (message == "HMACerror")
+                                {
                                     client.Close();
+                                    socketList.RemoveAt(socketList.Count - 1);
+                                }
                             }
                             else
                             {
@@ -170,6 +173,7 @@ namespace _432project_server
                                 buffer = Encoding.Default.GetBytes(signedResponse + message);
                                 client.Send(buffer);
                                 client.Close();
+                                socketList.RemoveAt(socketList.Count - 1);
                             }
                         }
                         else // enrollment request
@@ -199,7 +203,7 @@ namespace _432project_server
 
                                 client.Send(buffer);
                                 client.Close();
-                                //socketList.RemoveAt(socketList.Count - 1);
+                                socketList.RemoveAt(socketList.Count - 1);
                             }
                             else
                             {
@@ -298,6 +302,7 @@ namespace _432project_server
                 logs.AppendText(" Please give another password.\n");
             }
         }
+
         static byte[] decryptWithRSA(string input, int algoLength, string xmlStringKey)
         {
             // convert input string to byte array
