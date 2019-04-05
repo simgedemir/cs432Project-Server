@@ -23,7 +23,7 @@ namespace _432project_server
         List<Socket> socketList = new List<Socket>();
         static Dictionary<string, string> users = new Dictionary<string, string>(); // Username, Password
 
-
+        string challengeNum ="" ;
         string keys;
 
         string RsaSignKeys; // decrypyed signature keys xml string
@@ -82,22 +82,43 @@ namespace _432project_server
             {
                 try
                 {
-                    Socket newclient = serverSocket.Accept();
-                    if (socketList.Contains(newclient) == false)
-                        socketList.Add(newclient);
-                    logs.AppendText("A client has been connected \n");
+                    socketList.Add(serverSocket.Accept());
+                    Thread thReceive = new Thread(new ThreadStart(Receive));
+                    thReceive.Start();
+                }
+                catch
+                {
+                    listening = false;
+                }
+            }
+        }
+
+        private void Receive()
+        {
+            while (listening)
+            {
+                Socket client = null;
+                if (socketList.Count == 0)
+                    listening = false;
+                else
+                {
+                    client = socketList[socketList.Count - 1];
+
                     try
                     {
-                        Byte[] buffer = new Byte[512]; //FROM CLIENT THE INCOMING MESSAGE SIZE IS 384 BITS. THIS MAY EVEN GET BIGGER
-                        newclient.Receive(buffer);
-                        string incomingMessage = Encoding.Default.GetString(buffer); // encrypted RSA message output
+                        byte[] buffer = new byte[384];
+                        client.Receive(buffer);
+
+                        string incomingMessage = Encoding.Default.GetString(buffer);
                         incomingMessage = incomingMessage.TrimEnd('\0');
 
                         if (incomingMessage.Contains("Authenticate"))
                         {
                             int index = incomingMessage.IndexOf("Authenticate");
-                            string username = incomingMessage.Substring(index);
-                            
+                            string username = incomingMessage.Substring(0, index);
+
+                            logs.AppendText("Auth request from " + username + "\n");
+
                             // challenge protocol initiate
                             //Random r = new Random();
                             byte[] bytes = new byte[16];
@@ -105,9 +126,53 @@ namespace _432project_server
                             {
                                 rng.GetBytes(bytes);
                             }
-                            newclient.Send(bytes);
+
+                            challengeNum = Encoding.Default.GetString(bytes);
+                            string message = "Challenge:" + challengeNum;
+                            byte[] newbytes = Encoding.Default.GetBytes(message);
+                            client.Send(newbytes);
                         }
-                        else
+                        else if (incomingMessage.Contains("HMAC")) // challenge response
+                        {
+                            // HMAC{username}hmacvalue
+                            int index1 = incomingMessage.IndexOf("{");
+                            int index2 = incomingMessage.IndexOf("}");
+                            string username = incomingMessage.Substring(index1 + 1, index2 - index1 - 1);
+                            string hmacStr = incomingMessage.Substring(index2+1);
+
+                            string halfpass;
+                            if (users.ContainsKey(username))
+                            {
+                                halfpass = users[username];
+                                byte[] halfPass = Encoding.Default.GetBytes(halfpass);
+                                byte[] hmacsha256 = applyHMACwithSHA256(challengeNum, halfPass);
+
+                                string hmacsha256Str = Encoding.Default.GetString(hmacsha256);
+                                string message = "";
+                                if (hmacStr.Equals(hmacsha256Str))
+                                    message = "HMACsuccess";
+                                else
+                                    message = "HMACerror";
+
+                                byte[] signature = signWithRSA(message, 3072, RsaSignKeys);
+                                string signedResponse = Encoding.Default.GetString(signature);
+                                buffer = Encoding.Default.GetBytes(signedResponse + message);
+                                client.Send(buffer);
+                                if (message == "HMACerror")
+                                    client.Close();
+                            }
+                            else {
+                                string message = "HMACerror";
+                                byte[] signature = signWithRSA(message, 3072, RsaSignKeys);
+                                string signedResponse = Encoding.Default.GetString(signature);
+                                buffer = Encoding.Default.GetBytes(signedResponse + message);
+                                client.Send(buffer);
+                                client.Close();
+                            }
+                           
+
+                        }
+                        else // enrollment request
                         {
                             byte[] decryptedMessage = decryptWithRSA(incomingMessage, 3072, keys);
                             // here decrypted message includes username and hash of the half password
@@ -117,19 +182,23 @@ namespace _432project_server
 
                             string hashedpass = messageAsString.Substring(0, 16);
                             string username = messageAsString.Substring(16);
-                            Socket client = socketList[socketList.Count - 1];
 
-                            if (users.ContainsKey(username)) //if user(key) exists in dictionary, check the hashedpass
+                            if (users.ContainsKey(username)) //if user(key) exists in dictionary, they cannot enroll again
                             {
                                 string pass = users[username];
                                 //Send error & close connection
                                 string response = "Error";
                                 byte[] signature = signWithRSA(response, 3072, RsaSignKeys);
+
+                                //write to log window
+                                logs.AppendText("Signature: " + generateHexStringFromByteArray(signature) + "\n");
+
                                 string signedResponse = Encoding.Default.GetString(signature);
                                 buffer = Encoding.Default.GetBytes(signedResponse + response);
                                 //Send success & keep connection       
 
                                 client.Send(buffer);
+                                client.Close();
                                 socketList.RemoveAt(socketList.Count - 1);
                             }
                             else
@@ -138,29 +207,35 @@ namespace _432project_server
                                 users.Add(username, hashedpass); // add user to dict
                                 string response = "SuccessEnrolled";
                                 byte[] signature = signWithRSA(response, 3072, RsaSignKeys);
+
+                                //write to log window
+                                logs.AppendText("Signature: " + generateHexStringFromByteArray(signature) + "\n");
+                                
                                 string signedResponse = Encoding.Default.GetString(signature);
                                 buffer = Encoding.Default.GetBytes(signedResponse + response);
                                 int len = signedResponse.Length;
-                                //Send success & keep connection
+                                //Send success & close connection
                                 client.Send(buffer);
                             }
                         }
                     }
                     catch (Exception e)
                     {
-                        Console.WriteLine("Cannot sign: " + e);
-                    }
-                }
-                catch // TODO: Client disconnected error
-                {
-                    if (terminating)
-                    {
-                        listening = false;
-                        logs.AppendText("Client is disconnected \n"); //TODO: username display
-                    }
-                    else
-                    {
-                        logs.AppendText("The server stopped working \n");
+                        Console.Write(e);
+                        if (terminating)
+                        {
+                            byte[] buffer = Encoding.Default.GetBytes("Disconnect");
+                            client.Send(buffer);
+                            socketList.RemoveAt(socketList.Count - 1);
+
+                            listening = false;
+                            logs.AppendText("Client is disconnected \n"); //TODO: username display
+                        }
+                        else
+                        {
+                            logs.AppendText("The server stopped working \n");
+                            listening = false;
+                        }
                     }
                 }
             }
@@ -175,6 +250,9 @@ namespace _432project_server
             Array.Copy(hashedPass, 0, IV, 0, 16);
             Array.Copy(hashedPass, 16, key, 0, 16);
 
+            logs.AppendText("AES Key: " + generateHexStringFromByteArray(key)+ "\n");
+
+            logs.AppendText("AES IV: " + generateHexStringFromByteArray(IV) + "\n");
 
             string RSAkeys = null;
             //read keys only once
@@ -253,6 +331,18 @@ namespace _432project_server
         {
             string hexString = BitConverter.ToString(input);
             return hexString.Replace("-", "");
+        }
+
+        static byte[] applyHMACwithSHA256(string input, byte[] key)
+        {
+            // convert input string to byte array
+            byte[] byteInput = Encoding.Default.GetBytes(input);
+            // create HMAC applier object from System.Security.Cryptography
+            HMACSHA256 hmacSHA256 = new HMACSHA256(key);
+            // get the result of HMAC operation
+            byte[] result = hmacSHA256.ComputeHash(byteInput);
+
+            return result;
         }
 
         static byte[] decryptWithAES128(string input, byte[] key, byte[] IV)

@@ -40,9 +40,9 @@
             // logs
             // 
             this.logs.Location = new System.Drawing.Point(196, 27);
-            this.logs.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.logs.Margin = new System.Windows.Forms.Padding(2);
             this.logs.Name = "logs";
-            this.logs.Size = new System.Drawing.Size(171, 288);
+            this.logs.Size = new System.Drawing.Size(261, 261);
             this.logs.TabIndex = 1;
             this.logs.Text = "";
             // 
@@ -50,7 +50,7 @@
             // 
             this.textBox2.Enabled = false;
             this.textBox2.Location = new System.Drawing.Point(73, 119);
-            this.textBox2.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.textBox2.Margin = new System.Windows.Forms.Padding(2);
             this.textBox2.Name = "textBox2";
             this.textBox2.Size = new System.Drawing.Size(100, 20);
             this.textBox2.TabIndex = 2;
@@ -71,7 +71,7 @@
             // 
             this.listenButton.Enabled = false;
             this.listenButton.Location = new System.Drawing.Point(84, 155);
-            this.listenButton.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.listenButton.Margin = new System.Windows.Forms.Padding(2);
             this.listenButton.Name = "listenButton";
             this.listenButton.Size = new System.Drawing.Size(79, 32);
             this.listenButton.TabIndex = 5;
@@ -82,7 +82,7 @@
             // passwordBox
             // 
             this.passwordBox.Location = new System.Drawing.Point(73, 30);
-            this.passwordBox.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.passwordBox.Margin = new System.Windows.Forms.Padding(2);
             this.passwordBox.Name = "passwordBox";
             this.passwordBox.Size = new System.Drawing.Size(100, 20);
             this.passwordBox.TabIndex = 6;
@@ -100,7 +100,7 @@
             // sendButton
             // 
             this.sendButton.Location = new System.Drawing.Point(84, 64);
-            this.sendButton.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.sendButton.Margin = new System.Windows.Forms.Padding(2);
             this.sendButton.Name = "sendButton";
             this.sendButton.Size = new System.Drawing.Size(79, 25);
             this.sendButton.TabIndex = 8;
@@ -112,7 +112,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(389, 328);
+            this.ClientSize = new System.Drawing.Size(468, 301);
             this.Controls.Add(this.sendButton);
             this.Controls.Add(this.password);
             this.Controls.Add(this.passwordBox);
@@ -120,7 +120,7 @@
             this.Controls.Add(this.label2);
             this.Controls.Add(this.textBox2);
             this.Controls.Add(this.logs);
-            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "Form1";
             this.Text = "Form1";
             this.ResumeLayout(false);
