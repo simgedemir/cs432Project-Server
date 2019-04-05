@@ -14,7 +14,6 @@ using System.Security.Cryptography;
 
 namespace _432project_server
 {
-
     public partial class Form1 : Form
     {
         bool terminating = false;
@@ -36,7 +35,6 @@ namespace _432project_server
             InitializeComponent();
 
         }
-
 
         private void label2_Click(object sender, EventArgs e)
         {
@@ -98,8 +96,11 @@ namespace _432project_server
             while (listening)
             {
                 Socket client = null;
+
                 if (socketList.Count == 0)
-                    listening = false;
+                    //listening = false;
+                    break;
+
                 else
                 {
                     client = socketList[socketList.Count - 1];
@@ -138,7 +139,7 @@ namespace _432project_server
                             int index1 = incomingMessage.IndexOf("{");
                             int index2 = incomingMessage.IndexOf("}");
                             string username = incomingMessage.Substring(index1 + 1, index2 - index1 - 1);
-                            string hmacStr = incomingMessage.Substring(index2+1);
+                            string hmacStr = incomingMessage.Substring(index2 + 1);
 
                             string halfpass;
                             if (users.ContainsKey(username))
@@ -161,7 +162,8 @@ namespace _432project_server
                                 if (message == "HMACerror")
                                     client.Close();
                             }
-                            else {
+                            else
+                            {
                                 string message = "HMACerror";
                                 byte[] signature = signWithRSA(message, 3072, RsaSignKeys);
                                 string signedResponse = Encoding.Default.GetString(signature);
@@ -169,8 +171,6 @@ namespace _432project_server
                                 client.Send(buffer);
                                 client.Close();
                             }
-                           
-
                         }
                         else // enrollment request
                         {
@@ -199,7 +199,7 @@ namespace _432project_server
 
                                 client.Send(buffer);
                                 client.Close();
-                                socketList.RemoveAt(socketList.Count - 1);
+                                //socketList.RemoveAt(socketList.Count - 1);
                             }
                             else
                             {
@@ -210,7 +210,7 @@ namespace _432project_server
 
                                 //write to log window
                                 logs.AppendText("Signature: " + generateHexStringFromByteArray(signature) + "\n");
-                                
+
                                 string signedResponse = Encoding.Default.GetString(signature);
                                 buffer = Encoding.Default.GetBytes(signedResponse + response);
                                 int len = signedResponse.Length;
@@ -222,14 +222,10 @@ namespace _432project_server
                     catch (Exception e)
                     {
                         Console.Write(e);
-                        if (terminating)
+                        if (!terminating)
                         {
-                            byte[] buffer = Encoding.Default.GetBytes("Disconnect");
-                            client.Send(buffer);
-                            socketList.RemoveAt(socketList.Count - 1);
-
-                            listening = false;
-                            logs.AppendText("Client is disconnected \n"); //TODO: username display
+                            logs.AppendText("Client is disconnected \n");
+                            socketList.RemoveAt(socketList.Count - 1);//TODO: username display
                         }
                         else
                         {
