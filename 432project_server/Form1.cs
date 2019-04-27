@@ -21,8 +21,9 @@ namespace _432project_server
         Socket serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         List<Socket> socketList = new List<Socket>();
         static Dictionary<string, string> users = new Dictionary<string, string>(); // Username, Password
-
-        string challengeNum ="" ;
+        string usersfile = "users.txt";
+        
+        string challengeNum = "";
         string keys;
 
         string RsaSignKeys; // decrypyed signature keys xml string
@@ -209,6 +210,12 @@ namespace _432project_server
                             {
                                 //Send success & keep connection & add user to dict
                                 users.Add(username, hashedpass); // add user to dict
+                                
+                                using(System.IO.StreamWriter writer = new System.IO.StreamWriter(usersfile,true))
+                                {
+                                    writer.WriteLine(username + " " + hashedpass);
+                                    writer.Close();
+                                }
                                 string response = "SuccessEnrolled";
                                 byte[] signature = signWithRSA(response, 3072, RsaSignKeys);
 
@@ -250,7 +257,7 @@ namespace _432project_server
             Array.Copy(hashedPass, 0, IV, 0, 16);
             Array.Copy(hashedPass, 16, key, 0, 16);
 
-            logs.AppendText("AES Key: " + generateHexStringFromByteArray(key)+ "\n");
+            logs.AppendText("AES Key: " + generateHexStringFromByteArray(key) + "\n");
 
             logs.AppendText("AES IV: " + generateHexStringFromByteArray(IV) + "\n");
 
@@ -295,11 +302,31 @@ namespace _432project_server
 
                     listenButton.Enabled = true;
                     textBox2.Enabled = true;
+                    getUserList();
+                    sendButton.Enabled = false;
                 }
             }
-            catch
+            catch(Exception ex)
             {
+                Console.WriteLine(ex.Message);
                 logs.AppendText(" Please give another password.\n");
+            }
+        }
+
+        public void getUserList()
+        {
+            using (System.IO.StreamReader fileReader =
+            new System.IO.StreamReader(usersfile))
+            {
+                //xxxxxxx yyyyyy
+                String line = fileReader.ReadLine();
+                if (line!=null)
+                {
+                    int index = line.IndexOf(" ");
+                    String username = line.Substring(0, index);
+                    String hashpass = line.Substring(index + 1);
+                    users.Add(username, hashpass);
+                }
             }
         }
 
