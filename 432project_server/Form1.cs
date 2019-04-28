@@ -22,7 +22,7 @@ namespace _432project_server
         List<Socket> socketList = new List<Socket>();
         static Dictionary<string, string> users = new Dictionary<string, string>(); // Username, Password
         string usersfile = "users.txt";
-        
+
         string challengeNum = "";
         string keys;
 
@@ -210,8 +210,8 @@ namespace _432project_server
                             {
                                 //Send success & keep connection & add user to dict
                                 users.Add(username, hashedpass); // add user to dict
-                                
-                                using(System.IO.StreamWriter writer = new System.IO.StreamWriter(usersfile,true))
+
+                                using (System.IO.StreamWriter writer = new System.IO.StreamWriter(usersfile, true))
                                 {
                                     writer.WriteLine(username + " " + hashedpass);
                                     writer.Close();
@@ -257,9 +257,9 @@ namespace _432project_server
             Array.Copy(hashedPass, 0, IV, 0, 16);
             Array.Copy(hashedPass, 16, key, 0, 16);
 
-            logs.AppendText("AES Key: " + generateHexStringFromByteArray(key) + "\n");
+            //logs.AppendText("AES Key: " + generateHexStringFromByteArray(key) + "\n");
 
-            logs.AppendText("AES IV: " + generateHexStringFromByteArray(IV) + "\n");
+            //logs.AppendText("AES IV: " + generateHexStringFromByteArray(IV) + "\n");
 
             string RSAkeys = null;
             //read keys only once
@@ -306,11 +306,103 @@ namespace _432project_server
                     sendButton.Enabled = false;
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
                 logs.AppendText(" Please give another password.\n");
             }
+        }
+
+
+        private void changePassBtn_Click(object sender, EventArgs e)
+        {
+            //todo: implement password changing
+
+            string newPassword = newPassBox.Text;
+            string oldPassword = oldPassBox.Text;
+            byte[] hashedPass = hashWithSHA256(oldPassword);
+            byte[] key = new byte[16];
+            byte[] IV = new byte[16];
+            Array.Copy(hashedPass, 0, IV, 0, 16);
+            Array.Copy(hashedPass, 16, key, 0, 16);
+
+            string RSAkeys = null;
+            //read keys only once
+            using (System.IO.StreamReader fileReader =
+            new System.IO.StreamReader("encrypted_server_enc_dec_pub_prv.txt"))
+            {
+                RSAkeys = fileReader.ReadLine();
+            }
+
+
+            string RSAsignaturekey = null;
+            //Signature key
+
+            using (System.IO.StreamReader fileReader =
+            new System.IO.StreamReader("encrypted_server_signing_verification_pub_prv.txt"))
+            {
+                RSAsignaturekey = fileReader.ReadLine();
+            }
+
+
+            //RSA public/private key decryption
+            try
+            {
+                byte[] result = decryptWithAES128(Encoding.Default.GetString(hexStringToByteArray(RSAkeys)), key, IV);
+                RsaPubPrivKeys = Encoding.Default.GetString(result);
+
+                //RSA signature key decryption
+                byte[] result_sign = decryptWithAES128(Encoding.Default.GetString(hexStringToByteArray(RSAsignaturekey)), key, IV);
+                RsaSignKeys = Encoding.Default.GetString(result_sign);
+
+                if (result == null)
+                    logs.AppendText("Incorrect old password!\n");
+                else
+                {
+                    keys = Encoding.Default.GetString(result);
+                    byte[] newhashedPass = hashWithSHA256(newPassword);
+                    byte[] newkey = new byte[16];
+                    byte[] newIV = new byte[16];
+                    Array.Copy(newhashedPass, 0, newIV, 0, 16);
+                    Array.Copy(newhashedPass, 16, newkey, 0, 16);
+                    byte[] res = encryptWithAES128(RsaPubPrivKeys, newkey, newIV);
+
+                    byte[] resSign = encryptWithAES128(RsaSignKeys, newkey, newIV);
+
+                    if (res != null && resSign != null)
+                    {
+                        //write new keys to file
+                        using (System.IO.StreamWriter fileWriter =
+                        new System.IO.StreamWriter("encrypted_server_enc_dec_pub_prv.txt"))
+                        {
+                            String resStr = generateHexStringFromByteArray(res);
+                            fileWriter.WriteLine(resStr);
+                        }
+                        using (System.IO.StreamWriter fileWriter =
+                        new System.IO.StreamWriter("encrypted_server_signing_verification_pub_prv.txt"))
+                        {
+                            String resStr = generateHexStringFromByteArray(resSign);
+                            fileWriter.WriteLine(resStr);
+                        }
+
+                        RsaSignKeys = null;
+                        RsaPubPrivKeys = null;
+
+                        logs.AppendText("Password changed successfully.\n");
+                    }
+                    else
+                    {
+                        logs.AppendText("Cannot change \n");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                logs.AppendText("Incorrect old password!\n");
+            }
+
+
         }
 
         public void getUserList()
@@ -320,7 +412,7 @@ namespace _432project_server
             {
                 //xxxxxxx yyyyyy
                 String line = fileReader.ReadLine();
-                if (line!=null)
+                if (line != null)
                 {
                     int index = line.IndexOf(" ");
                     String username = line.Substring(0, index);
@@ -328,6 +420,41 @@ namespace _432project_server
                     users.Add(username, hashpass);
                 }
             }
+        }
+
+        static byte[] encryptWithAES128(string input, byte[] key, byte[] IV)
+        {
+            // convert input string to byte array
+            byte[] byteInput = Encoding.Default.GetBytes(input);
+
+            // create AES object from System.Security.Cryptography
+            RijndaelManaged aesObject = new RijndaelManaged();
+            // since we want to use AES-128
+            aesObject.KeySize = 128;
+            // block size of AES is 128 bits
+            aesObject.BlockSize = 128;
+            // mode -> CipherMode.*
+            aesObject.Mode = CipherMode.CFB;
+            // feedback size should be equal to block size
+            aesObject.FeedbackSize = 128;
+            // set the key
+            aesObject.Key = key;
+            // set the IV
+            aesObject.IV = IV;
+            // create an encryptor with the settings provided
+            ICryptoTransform encryptor = aesObject.CreateEncryptor();
+            byte[] result = null;
+
+            try
+            {
+                result = encryptor.TransformFinalBlock(byteInput, 0, byteInput.Length);
+            }
+            catch (Exception e) // if encryption fails
+            {
+                Console.WriteLine(e.Message); // display the cause
+            }
+
+            return result;
         }
 
         static byte[] decryptWithRSA(string input, int algoLength, string xmlStringKey)
@@ -446,6 +573,30 @@ namespace _432project_server
             }
 
             return result;
+        }
+
+        private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            oldPassBox.Visible = true;
+            newPassBox.Visible = true;
+            changePassBtn.Visible = true;
+            labeloldpass.Visible = true;
+            labelnewpass.Visible = true;
+            labelchangepass.Visible = true;
+            cancelBtn.Visible = true;
+            passPanel.Visible = true;
+        }
+
+        private void cancelBtn_Click(object sender, EventArgs e)
+        {
+            oldPassBox.Visible = false;
+            newPassBox.Visible = false;
+            changePassBtn.Visible = false;
+            labeloldpass.Visible = false;
+            labelnewpass.Visible = false;
+            labelchangepass.Visible = false;
+            cancelBtn.Visible = false;
+            passPanel.Visible = false;
         }
     }
 }
