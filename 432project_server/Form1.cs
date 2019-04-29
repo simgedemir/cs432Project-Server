@@ -25,7 +25,7 @@ namespace _432project_server
 
         string challengeNum = "";
         string keys;
-
+        string encryp_decrypt_sessionKey = "",auth_sessionKey="";
         string RsaSignKeys; // decrypyed signature keys xml string
         string RsaPubPrivKeys; // RSA public & private key xml string
 
@@ -152,14 +152,39 @@ namespace _432project_server
                                 string hmacsha256Str = Encoding.Default.GetString(hmacsha256);
                                 string message = "";
                                 if (hmacStr.Equals(hmacsha256Str))
+                                {
                                     message = "HMACsuccess";
-                                else
-                                    message = "HMACerror";
+                                    byte[] bytes = new byte[16];
+                                    using (var rng = new RNGCryptoServiceProvider())
+                                    {
+                                        rng.GetBytes(bytes);
+                                    }
 
-                                byte[] signature = signWithRSA(message, 3072, RsaSignKeys);
-                                string signedResponse = Encoding.Default.GetString(signature);
-                                buffer = Encoding.Default.GetBytes(signedResponse + message);
-                                client.Send(buffer);
+                                    encryp_decrypt_sessionKey = Encoding.Default.GetString(bytes);
+                                    byte[] bytes1 = new byte[16];
+                                    using (var rng = new RNGCryptoServiceProvider())
+                                    {
+                                        rng.GetBytes(bytes1);
+                                    }
+                                    auth_sessionKey = Encoding.Default.GetString(bytes1);
+                                    //encryption of the session keys
+                                    
+                                    byte [] encryptedKeys = encryptWithAES128(encryp_decrypt_sessionKey+auth_sessionKey,halfPass,hexStringToByteArray(challengeNum));
+                                    message = message + Encoding.Default.GetString(encryptedKeys);
+                                    byte[] signature = signWithRSA(message, 3072, RsaSignKeys);
+                                    string signedResponse = Encoding.Default.GetString(signature);
+                                    buffer = Encoding.Default.GetBytes(signedResponse + message);
+                                    client.Send(buffer);
+                                }
+
+                                else
+                                {
+                                    message = "HMACerror";
+                                    byte[] signature = signWithRSA(message, 3072, RsaSignKeys);
+                                    string signedResponse = Encoding.Default.GetString(signature);
+                                    buffer = Encoding.Default.GetBytes(signedResponse + message);
+                                    client.Send(buffer);
+                                }
                                 if (message == "HMACerror")
                                 {
                                     client.Close();
@@ -597,6 +622,11 @@ namespace _432project_server
             labelchangepass.Visible = false;
             cancelBtn.Visible = false;
             passPanel.Visible = false;
+        }
+
+        private void passwordBox_TextChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }
