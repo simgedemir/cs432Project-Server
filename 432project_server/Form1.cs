@@ -23,7 +23,7 @@ namespace _432project_server
         static Dictionary<string, string> users = new Dictionary<string, string>(); // Username, Password
         string usersfile = "users.txt";
 
-        string challengeNum = "";
+        byte[] challengebytes;
         string keys;
         string encryp_decrypt_sessionKey = "",auth_sessionKey="";
         string RsaSignKeys; // decrypyed signature keys xml string
@@ -123,13 +123,13 @@ namespace _432project_server
 
                             // challenge protocol initiate
                             //Random r = new Random();
-                            byte[] bytes = new byte[16];
+                            challengebytes = new byte[16];
                             using (var rng = new RNGCryptoServiceProvider())
                             {
-                                rng.GetBytes(bytes);
+                                rng.GetBytes(challengebytes);
                             }
 
-                            challengeNum = Encoding.Default.GetString(bytes);
+                            string challengeNum = Encoding.Default.GetString(challengebytes);
                             string message = "Challenge:" + challengeNum;
                             byte[] newbytes = Encoding.Default.GetBytes(message);
                             client.Send(newbytes);
@@ -147,7 +147,7 @@ namespace _432project_server
                             {
                                 halfpass = users[username];
                                 byte[] halfPass = Encoding.Default.GetBytes(halfpass);
-                                byte[] hmacsha256 = applyHMACwithSHA256(challengeNum, halfPass);
+                                byte[] hmacsha256 = applyHMACwithSHA256(Encoding.Default.GetString(challengebytes), halfPass);
 
                                 string hmacsha256Str = Encoding.Default.GetString(hmacsha256);
                                 string message = "";
@@ -169,11 +169,11 @@ namespace _432project_server
                                     auth_sessionKey = Encoding.Default.GetString(bytes1);
                                     //encryption of the session keys
                                     
-                                    byte [] encryptedKeys = encryptWithAES128(encryp_decrypt_sessionKey+auth_sessionKey,halfPass,hexStringToByteArray(challengeNum));
-                                    message = message + Encoding.Default.GetString(encryptedKeys);
-                                    byte[] signature = signWithRSA(message, 3072, RsaSignKeys);
+                                    byte [] encryptedKeys = encryptWithAES128(encryp_decrypt_sessionKey+auth_sessionKey,halfPass,challengebytes);
+                                    string newMessage = Encoding.Default.GetString(encryptedKeys) + message;
+                                    byte[] signature = signWithRSA(newMessage, 3072, RsaSignKeys);
                                     string signedResponse = Encoding.Default.GetString(signature);
-                                    buffer = Encoding.Default.GetBytes(signedResponse + message);
+                                    buffer = Encoding.Default.GetBytes(signedResponse + newMessage);
                                     client.Send(buffer);
                                 }
 
