@@ -19,8 +19,10 @@ namespace _432project_server
         bool terminating = false;
         bool listening = false;
         Socket serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-        List<Socket> socketList = new List<Socket>();
+
+        Dictionary<Socket, string> socketList = new Dictionary<Socket, string>(); //Socket, Username
         static Dictionary<string, string> users = new Dictionary<string, string>(); // Username, Password
+        
         string usersfile = "users.txt";
 
         byte[] challengebytes;
@@ -81,7 +83,7 @@ namespace _432project_server
             {
                 try
                 {
-                    socketList.Add(serverSocket.Accept());
+                    socketList.Add(serverSocket.Accept(),""); //since we don't know the username yet
                     Thread thReceive = new Thread(new ThreadStart(Receive));
                     thReceive.Start();
                 }
@@ -104,7 +106,7 @@ namespace _432project_server
 
                 else
                 {
-                    client = socketList[socketList.Count - 1];
+                    client = socketList.ElementAt(socketList.Count - 1).Key;
 
                     try
                     {
@@ -119,20 +121,32 @@ namespace _432project_server
                             int index = incomingMessage.IndexOf("Authenticate");
                             string username = incomingMessage.Substring(0, index);
 
-                            logs.AppendText("Auth request from " + username + "\n");
-
-                            // challenge protocol initiate
-                            //Random r = new Random();
-                            challengebytes = new byte[16];
-                            using (var rng = new RNGCryptoServiceProvider())
+                            if (socketList.ContainsValue(username))
                             {
-                                rng.GetBytes(challengebytes);
+                                buffer = Encoding.Default.GetBytes("ERR: User already connected");
+                                client.Send(buffer);
+                                client.Close();
+                                socketList.Remove(client);
                             }
+                            else
+                            {
+                                socketList[client] = username; //update socketlist with username
 
-                            string challengeNum = Encoding.Default.GetString(challengebytes);
-                            string message = "Challenge:" + challengeNum;
-                            byte[] newbytes = Encoding.Default.GetBytes(message);
-                            client.Send(newbytes);
+                                logs.AppendText("Auth request from " + username + "\n");
+
+                                // challenge protocol initiate
+                                //Random r = new Random();
+                                challengebytes = new byte[16];
+                                using (var rng = new RNGCryptoServiceProvider())
+                                {
+                                    rng.GetBytes(challengebytes);
+                                }
+
+                                string challengeNum = Encoding.Default.GetString(challengebytes);
+                                string message = "Challenge:" + challengeNum;
+                                byte[] newbytes = Encoding.Default.GetBytes(message);
+                                client.Send(newbytes);
+                            }
                         }
                         else if (incomingMessage.Contains("HMAC")) // challenge response
                         {
@@ -150,10 +164,13 @@ namespace _432project_server
                                 byte[] hmacsha256 = applyHMACwithSHA256(Encoding.Default.GetString(challengebytes), halfPass);
 
                                 string hmacsha256Str = Encoding.Default.GetString(hmacsha256);
-                                string message = "";
+                                string message = "NOT OK"; //by default, not ok
+
                                 if (hmacStr.Equals(hmacsha256Str))
                                 {
-                                    message = "HMACsuccess";
+                                    socketList[client] = username; //update socketlist with username
+
+                                    message = "OK";
                                     byte[] bytes = new byte[16];
                                     using (var rng = new RNGCryptoServiceProvider())
                                     {
@@ -170,36 +187,39 @@ namespace _432project_server
                                     //encryption of the session keys
                                     
                                     byte [] encryptedKeys = encryptWithAES128(encryp_decrypt_sessionKey+auth_sessionKey,halfPass,challengebytes);
-                                    string newMessage = Encoding.Default.GetString(encryptedKeys) + message;
+                                    string newMessage = message + Encoding.Default.GetString(encryptedKeys); //OK+key
                                     byte[] signature = signWithRSA(newMessage, 3072, RsaSignKeys);
                                     string signedResponse = Encoding.Default.GetString(signature);
                                     buffer = Encoding.Default.GetBytes(signedResponse + newMessage);
                                     client.Send(buffer);
+                                    logs.AppendText( username + " authorized.\n");
                                 }
 
                                 else
                                 {
-                                    message = "HMACerror";
+                                    message = "NOT OK";
                                     byte[] signature = signWithRSA(message, 3072, RsaSignKeys);
                                     string signedResponse = Encoding.Default.GetString(signature);
                                     buffer = Encoding.Default.GetBytes(signedResponse + message);
                                     client.Send(buffer);
+                                    logs.AppendText("Authorization failed.\n");
                                 }
-                                if (message == "HMACerror")
+
+                                if (message == "NOT OK")
                                 {
                                     client.Close();
-                                    socketList.RemoveAt(socketList.Count - 1);
+                                    socketList.Remove(client);
                                 }
                             }
                             else
                             {
-                                string message = "HMACerror";
+                                string message = "NOT OK";
                                 byte[] signature = signWithRSA(message, 3072, RsaSignKeys);
                                 string signedResponse = Encoding.Default.GetString(signature);
                                 buffer = Encoding.Default.GetBytes(signedResponse + message);
                                 client.Send(buffer);
                                 client.Close();
-                                socketList.RemoveAt(socketList.Count - 1);
+                                socketList.Remove(client);
                             }
                         }
                         else // enrollment request
@@ -221,7 +241,7 @@ namespace _432project_server
                                 byte[] signature = signWithRSA(response, 3072, RsaSignKeys);
 
                                 //write to log window
-                                logs.AppendText("Signature: " + generateHexStringFromByteArray(signature) + "\n");
+                                // logs.AppendText("Signature: " + generateHexStringFromByteArray(signature) + "\n");
 
                                 string signedResponse = Encoding.Default.GetString(signature);
                                 buffer = Encoding.Default.GetBytes(signedResponse + response);
@@ -229,13 +249,13 @@ namespace _432project_server
 
                                 client.Send(buffer);
                                 client.Close();
-                                socketList.RemoveAt(socketList.Count - 1);
+                                socketList.Remove(client);
                             }
                             else
                             {
                                 //Send success & keep connection & add user to dict
                                 users.Add(username, hashedpass); // add user to dict
-
+                                
                                 using (System.IO.StreamWriter writer = new System.IO.StreamWriter(usersfile, true))
                                 {
                                     writer.WriteLine(username + " " + hashedpass);
@@ -245,7 +265,7 @@ namespace _432project_server
                                 byte[] signature = signWithRSA(response, 3072, RsaSignKeys);
 
                                 //write to log window
-                                logs.AppendText("Signature: " + generateHexStringFromByteArray(signature) + "\n");
+                                //logs.AppendText("Signature: " + generateHexStringFromByteArray(signature) + "\n");
 
                                 string signedResponse = Encoding.Default.GetString(signature);
                                 buffer = Encoding.Default.GetBytes(signedResponse + response);
@@ -260,8 +280,11 @@ namespace _432project_server
                         Console.Write(e);
                         if (!terminating)
                         {
-                            logs.AppendText("Client is disconnected \n");
-                            socketList.RemoveAt(socketList.Count - 1);//TODO: username display
+                            string username = socketList[client];
+                            if(username != "")
+                                logs.AppendText(username + " is disconnected \n");
+                            client.Close();
+                            socketList.Remove(client);                            
                         }
                         else
                         {
@@ -324,7 +347,7 @@ namespace _432project_server
                 {
                     logs.AppendText("Password accepted.\n");
                     keys = Encoding.Default.GetString(result);
-
+                    
                     listenButton.Enabled = true;
                     textBox2.Enabled = true;
                     getUserList();

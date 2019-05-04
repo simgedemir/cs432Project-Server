@@ -49,20 +49,20 @@
             // 
             // logs
             // 
-            this.logs.Location = new System.Drawing.Point(466, 46);
-            this.logs.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.logs.Location = new System.Drawing.Point(233, 24);
+            this.logs.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.logs.Name = "logs";
-            this.logs.Size = new System.Drawing.Size(518, 604);
+            this.logs.Size = new System.Drawing.Size(261, 316);
             this.logs.TabIndex = 1;
             this.logs.Text = "";
             // 
             // textBox2
             // 
             this.textBox2.Enabled = false;
-            this.textBox2.Location = new System.Drawing.Point(204, 223);
-            this.textBox2.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.textBox2.Location = new System.Drawing.Point(102, 116);
+            this.textBox2.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.textBox2.Name = "textBox2";
-            this.textBox2.Size = new System.Drawing.Size(218, 31);
+            this.textBox2.Size = new System.Drawing.Size(111, 20);
             this.textBox2.TabIndex = 2;
             this.textBox2.Text = "1234";
             this.textBox2.TextChanged += new System.EventHandler(this.textBox2_TextChanged);
@@ -70,10 +70,10 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(142, 225);
-            this.label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label2.Location = new System.Drawing.Point(71, 117);
+            this.label2.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(57, 25);
+            this.label2.Size = new System.Drawing.Size(29, 13);
             this.label2.TabIndex = 4;
             this.label2.Text = "Port:";
             this.label2.Click += new System.EventHandler(this.label2_Click);
@@ -81,10 +81,10 @@
             // listenButton
             // 
             this.listenButton.Enabled = false;
-            this.listenButton.Location = new System.Drawing.Point(286, 269);
-            this.listenButton.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.listenButton.Location = new System.Drawing.Point(143, 140);
+            this.listenButton.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.listenButton.Name = "listenButton";
-            this.listenButton.Size = new System.Drawing.Size(140, 50);
+            this.listenButton.Size = new System.Drawing.Size(70, 26);
             this.listenButton.TabIndex = 5;
             this.listenButton.Text = "Listen";
             this.listenButton.UseVisualStyleBackColor = true;
@@ -92,29 +92,29 @@
             // 
             // passwordBox
             // 
-            this.passwordBox.Location = new System.Drawing.Point(204, 52);
-            this.passwordBox.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.passwordBox.Location = new System.Drawing.Point(102, 27);
+            this.passwordBox.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.passwordBox.Name = "passwordBox";
-            this.passwordBox.Size = new System.Drawing.Size(218, 31);
+            this.passwordBox.Size = new System.Drawing.Size(111, 20);
             this.passwordBox.TabIndex = 6;
             this.passwordBox.TextChanged += new System.EventHandler(this.passwordBox_TextChanged);
             // 
             // password
             // 
             this.password.AutoSize = true;
-            this.password.Location = new System.Drawing.Point(86, 52);
-            this.password.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.password.Location = new System.Drawing.Point(43, 27);
+            this.password.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.password.Name = "password";
-            this.password.Size = new System.Drawing.Size(112, 25);
+            this.password.Size = new System.Drawing.Size(56, 13);
             this.password.TabIndex = 7;
             this.password.Text = "Password:";
             // 
             // sendButton
             // 
-            this.sendButton.Location = new System.Drawing.Point(296, 98);
-            this.sendButton.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.sendButton.Location = new System.Drawing.Point(148, 51);
+            this.sendButton.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.sendButton.Name = "sendButton";
-            this.sendButton.Size = new System.Drawing.Size(130, 48);
+            this.sendButton.Size = new System.Drawing.Size(65, 25);
             this.sendButton.TabIndex = 8;
             this.sendButton.Text = "Send";
             this.sendButton.UseVisualStyleBackColor = true;
@@ -124,6 +124,7 @@
             // 
             this.passPanel.BackColor = System.Drawing.Color.SeaShell;
             this.passPanel.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
+            this.passPanel.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
             this.passPanel.Controls.Add(this.cancelBtn);
             this.passPanel.Controls.Add(this.labelchangepass);
             this.passPanel.Controls.Add(this.changePassBtn);
@@ -131,19 +132,18 @@
             this.passPanel.Controls.Add(this.labeloldpass);
             this.passPanel.Controls.Add(this.newPassBox);
             this.passPanel.Controls.Add(this.oldPassBox);
-            this.passPanel.Location = new System.Drawing.Point(22, 354);
-            this.passPanel.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.passPanel.Location = new System.Drawing.Point(11, 184);
             this.passPanel.Name = "passPanel";
-            this.passPanel.Size = new System.Drawing.Size(434, 300);
+            this.passPanel.Size = new System.Drawing.Size(217, 156);
             this.passPanel.TabIndex = 15;
             this.passPanel.Visible = false;
             // 
             // cancelBtn
             // 
-            this.cancelBtn.Location = new System.Drawing.Point(204, 225);
-            this.cancelBtn.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.cancelBtn.Location = new System.Drawing.Point(102, 117);
+            this.cancelBtn.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.cancelBtn.Name = "cancelBtn";
-            this.cancelBtn.Size = new System.Drawing.Size(96, 46);
+            this.cancelBtn.Size = new System.Drawing.Size(48, 24);
             this.cancelBtn.TabIndex = 21;
             this.cancelBtn.Text = "Cancel";
             this.cancelBtn.UseVisualStyleBackColor = true;
@@ -154,20 +154,20 @@
             // 
             this.labelchangepass.AutoSize = true;
             this.labelchangepass.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(162)));
-            this.labelchangepass.Location = new System.Drawing.Point(86, 44);
-            this.labelchangepass.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.labelchangepass.Location = new System.Drawing.Point(43, 23);
+            this.labelchangepass.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.labelchangepass.Name = "labelchangepass";
-            this.labelchangepass.Size = new System.Drawing.Size(225, 29);
+            this.labelchangepass.Size = new System.Drawing.Size(122, 15);
             this.labelchangepass.TabIndex = 20;
             this.labelchangepass.Text = "Change Password";
             this.labelchangepass.Visible = false;
             // 
             // changePassBtn
             // 
-            this.changePassBtn.Location = new System.Drawing.Point(308, 225);
-            this.changePassBtn.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.changePassBtn.Location = new System.Drawing.Point(154, 117);
+            this.changePassBtn.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.changePassBtn.Name = "changePassBtn";
-            this.changePassBtn.Size = new System.Drawing.Size(96, 46);
+            this.changePassBtn.Size = new System.Drawing.Size(48, 24);
             this.changePassBtn.TabIndex = 19;
             this.changePassBtn.Text = "Okay";
             this.changePassBtn.UseVisualStyleBackColor = true;
@@ -177,10 +177,10 @@
             // labelnewpass
             // 
             this.labelnewpass.AutoSize = true;
-            this.labelnewpass.Location = new System.Drawing.Point(12, 183);
-            this.labelnewpass.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.labelnewpass.Location = new System.Drawing.Point(6, 95);
+            this.labelnewpass.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.labelnewpass.Name = "labelnewpass";
-            this.labelnewpass.Size = new System.Drawing.Size(160, 25);
+            this.labelnewpass.Size = new System.Drawing.Size(81, 13);
             this.labelnewpass.TabIndex = 18;
             this.labelnewpass.Text = "New Password:";
             this.labelnewpass.Visible = false;
@@ -188,29 +188,27 @@
             // labeloldpass
             // 
             this.labeloldpass.AutoSize = true;
-            this.labeloldpass.Location = new System.Drawing.Point(24, 115);
-            this.labeloldpass.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.labeloldpass.Location = new System.Drawing.Point(12, 60);
+            this.labeloldpass.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.labeloldpass.Name = "labeloldpass";
-            this.labeloldpass.Size = new System.Drawing.Size(151, 25);
+            this.labeloldpass.Size = new System.Drawing.Size(75, 13);
             this.labeloldpass.TabIndex = 17;
             this.labeloldpass.Text = "Old Password:";
             this.labeloldpass.Visible = false;
             // 
             // newPassBox
             // 
-            this.newPassBox.Location = new System.Drawing.Point(182, 177);
-            this.newPassBox.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.newPassBox.Location = new System.Drawing.Point(91, 92);
             this.newPassBox.Name = "newPassBox";
-            this.newPassBox.Size = new System.Drawing.Size(218, 31);
+            this.newPassBox.Size = new System.Drawing.Size(111, 20);
             this.newPassBox.TabIndex = 16;
             this.newPassBox.Visible = false;
             // 
             // oldPassBox
             // 
-            this.oldPassBox.Location = new System.Drawing.Point(182, 110);
-            this.oldPassBox.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.oldPassBox.Location = new System.Drawing.Point(91, 57);
             this.oldPassBox.Name = "oldPassBox";
-            this.oldPassBox.Size = new System.Drawing.Size(218, 31);
+            this.oldPassBox.Size = new System.Drawing.Size(111, 20);
             this.oldPassBox.TabIndex = 15;
             this.oldPassBox.Visible = false;
             // 
@@ -218,10 +216,9 @@
             // 
             this.linkLabel1.AutoSize = true;
             this.linkLabel1.LinkColor = System.Drawing.Color.Blue;
-            this.linkLabel1.Location = new System.Drawing.Point(240, 150);
-            this.linkLabel1.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
+            this.linkLabel1.Location = new System.Drawing.Point(120, 78);
             this.linkLabel1.Name = "linkLabel1";
-            this.linkLabel1.Size = new System.Drawing.Size(187, 25);
+            this.linkLabel1.Size = new System.Drawing.Size(93, 13);
             this.linkLabel1.TabIndex = 16;
             this.linkLabel1.TabStop = true;
             this.linkLabel1.Text = "Change Password";
@@ -229,9 +226,9 @@
             // 
             // Form1
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1010, 675);
+            this.ClientSize = new System.Drawing.Size(505, 351);
             this.Controls.Add(this.linkLabel1);
             this.Controls.Add(this.passPanel);
             this.Controls.Add(this.sendButton);
@@ -241,7 +238,7 @@
             this.Controls.Add(this.label2);
             this.Controls.Add(this.textBox2);
             this.Controls.Add(this.logs);
-            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.Name = "Form1";
             this.Text = "Form1";
             this.passPanel.ResumeLayout(false);
