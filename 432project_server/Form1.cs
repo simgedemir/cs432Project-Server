@@ -22,6 +22,7 @@ namespace _432project_server
 
         Dictionary<Socket, string> socketList = new Dictionary<Socket, string>(); //Socket, Username
         static Dictionary<string, string> users = new Dictionary<string, string>(); // Username, Password
+        static Dictionary<string, string> sessionKeys = new Dictionary<string, string>(); // username, enryption-authentication session keys
         
         string usersfile = "users.txt";
 
@@ -106,11 +107,12 @@ namespace _432project_server
 
                 else
                 {
+                   
                     client = socketList.ElementAt(socketList.Count - 1).Key;
 
                     try
                     {
-                        byte[] buffer = new byte[384];
+                        byte[] buffer = new byte[600];
                         client.Receive(buffer);
 
                         string incomingMessage = Encoding.Default.GetString(buffer);
@@ -159,56 +161,95 @@ namespace _432project_server
                             string halfpass;
                             if (users.ContainsKey(username))
                             {
-                                halfpass = users[username];
-                                byte[] halfPass = Encoding.Default.GetBytes(halfpass);
-                                byte[] hmacsha256 = applyHMACwithSHA256(Encoding.Default.GetString(challengebytes), halfPass);
-
-                                string hmacsha256Str = Encoding.Default.GetString(hmacsha256);
-                                string message = "NOT OK"; //by default, not ok
-
-                                if (hmacStr.Equals(hmacsha256Str))
+                                if (hmacStr.Length > 32)
                                 {
-                                    socketList[client] = username; //update socketlist with username
-
-                                    message = "OK";
-                                    byte[] bytes = new byte[16];
-                                    using (var rng = new RNGCryptoServiceProvider())
+                                    string keys = sessionKeys[username];
+                                    string encryption = keys.Substring(0, keys.Length / 2);
+                                    string authentication = keys.Substring(keys.Length / 2);
+                                    byte[] longMessage = Encoding.Default.GetBytes(hmacStr);
+                                    byte[] hmac = new byte[32];
+                                    byte[] encryptedMes = new byte[16];
+                                    byte[] IV = new byte[16];
+                                    Array.Copy(longMessage, 0, hmac, 0, 32);
+                                    Array.Copy(longMessage, 32, encryptedMes, 0, 16);
+                                    Array.Copy(longMessage, 48, IV, 0, 16);
+                                    byte[] hmacsha256 = applyHMACwithSHA256(Encoding.Default.GetString(encryptedMes), Encoding.Default.GetBytes(authentication));
+                                    string hmacsha256Str = Encoding.Default.GetString(hmacsha256);                                   
+                                    string hmacstr = Encoding.Default.GetString(hmac);
+                                    if (hmacstr.Equals(hmacsha256Str))
                                     {
-                                        rng.GetBytes(bytes);
+                                        byte[] decryptedMes = decryptWithAES128(Encoding.Default.GetString(encryptedMes), Encoding.Default.GetBytes(encryption), IV);
+                                        foreach (KeyValuePair<Socket, string> item in socketList)
+                                        {
+                                            String name = item.Value;
+                                            if(!name.Equals(username))
+                                            {
+                                                Socket s = item.Key;
+                                                keys = sessionKeys[name];
+                                                encryption = keys.Substring(0, keys.Length / 2);
+                                                authentication = keys.Substring(keys.Length / 2);
+                                                byte [] encrptedBuffer= encryptWithAES128(Encoding.Default.GetString(decryptedMes),Encoding.Default.GetBytes(encryption),IV);
+                                                byte[] hmacMes= applyHMACwithSHA256(Encoding.Default.GetString(encrptedBuffer), Encoding.Default.GetBytes(authentication));
+                                                string message = "Broadcast:" + Encoding.Default.GetString(hmacMes) + Encoding.Default.GetString(encrptedBuffer);
+                                                byte[] hmacMessage = Encoding.Default.GetBytes(message);
+                                                s.Send(hmacMessage);
+                                            }
+                                        }
                                     }
-
-                                    encryp_decrypt_sessionKey = Encoding.Default.GetString(bytes);
-                                    byte[] bytes1 = new byte[16];
-                                    using (var rng = new RNGCryptoServiceProvider())
-                                    {
-                                        rng.GetBytes(bytes1);
-                                    }
-                                    auth_sessionKey = Encoding.Default.GetString(bytes1);
-                                    //encryption of the session keys
-                                    
-                                    byte [] encryptedKeys = encryptWithAES128(encryp_decrypt_sessionKey+auth_sessionKey,halfPass,challengebytes);
-                                    string newMessage = message + Encoding.Default.GetString(encryptedKeys); //OK+key
-                                    byte[] signature = signWithRSA(newMessage, 3072, RsaSignKeys);
-                                    string signedResponse = Encoding.Default.GetString(signature);
-                                    buffer = Encoding.Default.GetBytes(signedResponse + newMessage);
-                                    client.Send(buffer);
-                                    logs.AppendText( username + " authorized.\n");
                                 }
-
                                 else
                                 {
-                                    message = "NOT OK";
-                                    byte[] signature = signWithRSA(message, 3072, RsaSignKeys);
-                                    string signedResponse = Encoding.Default.GetString(signature);
-                                    buffer = Encoding.Default.GetBytes(signedResponse + message);
-                                    client.Send(buffer);
-                                    logs.AppendText("Authorization failed.\n");
-                                }
+                                    halfpass = users[username];
+                                    byte[] halfPass = Encoding.Default.GetBytes(halfpass);
+                                    byte[] hmacsha256 = applyHMACwithSHA256(Encoding.Default.GetString(challengebytes), halfPass);
 
-                                if (message == "NOT OK")
-                                {
-                                    client.Close();
-                                    socketList.Remove(client);
+                                    string hmacsha256Str = Encoding.Default.GetString(hmacsha256);
+                                    string message = "NOT OK"; //by default, not ok
+
+                                    if (hmacStr.Equals(hmacsha256Str))
+                                    {
+                                        socketList[client] = username; //update socketlist with username
+
+                                        message = "OK";
+                                        byte[] bytes = new byte[16];
+                                        using (var rng = new RNGCryptoServiceProvider())
+                                        {
+                                            rng.GetBytes(bytes);
+                                        }
+
+                                        encryp_decrypt_sessionKey = Encoding.Default.GetString(bytes);
+                                        byte[] bytes1 = new byte[16];
+                                        using (var rng = new RNGCryptoServiceProvider())
+                                        {
+                                            rng.GetBytes(bytes1);
+                                        }
+                                        auth_sessionKey = Encoding.Default.GetString(bytes1);
+                                        //encryption of the session keys
+                                        sessionKeys.Add(username, encryp_decrypt_sessionKey + auth_sessionKey);
+                                        byte[] encryptedKeys = encryptWithAES128(encryp_decrypt_sessionKey + auth_sessionKey, halfPass, challengebytes);
+                                        string newMessage = message + Encoding.Default.GetString(encryptedKeys); //OK+key
+                                        byte[] signature = signWithRSA(newMessage, 3072, RsaSignKeys);
+                                        string signedResponse = Encoding.Default.GetString(signature);
+                                        buffer = Encoding.Default.GetBytes(signedResponse + newMessage);
+                                        client.Send(buffer);
+                                        logs.AppendText(username + " authorized.\n");
+                                    }
+
+                                    else
+                                    {
+                                        message = "NOT OK";
+                                        byte[] signature = signWithRSA(message, 3072, RsaSignKeys);
+                                        string signedResponse = Encoding.Default.GetString(signature);
+                                        buffer = Encoding.Default.GetBytes(signedResponse + message);
+                                        client.Send(buffer);
+                                        logs.AppendText("Authorization failed.\n");
+                                    }
+
+                                    if (message == "NOT OK")
+                                    {
+                                        client.Close();
+                                        socketList.Remove(client);
+                                    }
                                 }
                             }
                             else
@@ -221,6 +262,7 @@ namespace _432project_server
                                 client.Close();
                                 socketList.Remove(client);
                             }
+                            
                         }
                         else // enrollment request
                         {
@@ -255,7 +297,7 @@ namespace _432project_server
                             {
                                 //Send success & keep connection & add user to dict
                                 users.Add(username, hashedpass); // add user to dict
-                                
+
                                 using (System.IO.StreamWriter writer = new System.IO.StreamWriter(usersfile, true))
                                 {
                                     writer.WriteLine(username + " " + hashedpass);
