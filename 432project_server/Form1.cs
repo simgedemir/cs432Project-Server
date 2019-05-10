@@ -514,12 +514,13 @@ namespace _432project_server
             {
                 //xxxxxxx yyyyyy
                 String line = fileReader.ReadLine();
-                if (line != null)
+                while (line != null)
                 {
                     int index = line.IndexOf(" ");
                     String username = line.Substring(0, index);
                     String hashpass = line.Substring(index + 1);
                     users.Add(username, hashpass);
+                    line = fileReader.ReadLine();
                 }
             }
         }
