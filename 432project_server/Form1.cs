@@ -182,7 +182,7 @@ namespace _432project_server
                                         foreach (KeyValuePair<Socket, string> item in socketList)
                                         {
                                             String name = item.Value;
-                                            if(!name.Equals(username))
+                                            if(!name.Equals(username) && name!="")
                                             {
                                                 Socket s = item.Key;
                                                 keys = sessionKeys[name];
