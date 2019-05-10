@@ -188,9 +188,14 @@ namespace _432project_server
                                                 keys = sessionKeys[name];
                                                 encryption = keys.Substring(0, keys.Length / 2);
                                                 authentication = keys.Substring(keys.Length / 2);
-                                                byte [] encrptedBuffer= encryptWithAES128(Encoding.Default.GetString(decryptedMes),Encoding.Default.GetBytes(encryption),IV);
+                                                byte [] randomIV = new byte[16];
+                                                using (var rng = new RNGCryptoServiceProvider())
+                                                {
+                                                    rng.GetBytes(randomIV);
+                                                }
+                                                byte [] encrptedBuffer= encryptWithAES128(Encoding.Default.GetString(decryptedMes),Encoding.Default.GetBytes(encryption),randomIV);
                                                 byte[] hmacMes= applyHMACwithSHA256(Encoding.Default.GetString(encrptedBuffer), Encoding.Default.GetBytes(authentication));
-                                                string message = "Broadcast:" + Encoding.Default.GetString(hmacMes) + Encoding.Default.GetString(encrptedBuffer);
+                                                string message = "Broadcast:" + Encoding.Default.GetString(hmacMes) + Encoding.Default.GetString(encrptedBuffer)+randomIV;
                                                 byte[] hmacMessage = Encoding.Default.GetBytes(message);
                                                 s.Send(hmacMessage);
                                             }
