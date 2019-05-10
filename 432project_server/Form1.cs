@@ -179,26 +179,33 @@ namespace _432project_server
                                     if (hmacstr.Equals(hmacsha256Str))
                                     {
                                         byte[] decryptedMes = decryptWithAES128(Encoding.Default.GetString(encryptedMes), Encoding.Default.GetBytes(encryption), IV);
-                                        foreach (KeyValuePair<Socket, string> item in socketList)
+                                        if (socketList.Count > 1) // if only one client authorized, give message 
                                         {
-                                            String name = item.Value;
-                                            if(!name.Equals(username) && name!="")
+                                            foreach (KeyValuePair<Socket, string> item in socketList)
                                             {
-                                                Socket s = item.Key;
-                                                keys = sessionKeys[name];
-                                                encryption = keys.Substring(0, keys.Length / 2);
-                                                authentication = keys.Substring(keys.Length / 2);
-                                                byte [] randomIV = new byte[16];
-                                                using (var rng = new RNGCryptoServiceProvider())
+                                                String name = item.Value;
+                                                if (!name.Equals(username) && name != "") //after fixing the file this could be deleted
                                                 {
-                                                    rng.GetBytes(randomIV);
+                                                    Socket s = item.Key;
+                                                    keys = sessionKeys[name];
+                                                    encryption = keys.Substring(0, keys.Length / 2);
+                                                    authentication = keys.Substring(keys.Length / 2);
+                                                    byte[] randomIV = new byte[16];
+                                                    using (var rng = new RNGCryptoServiceProvider())
+                                                    {
+                                                        rng.GetBytes(randomIV);
+                                                    }
+                                                    byte[] encrptedBuffer = encryptWithAES128(Encoding.Default.GetString(decryptedMes), Encoding.Default.GetBytes(encryption), randomIV);
+                                                    byte[] hmacMes = applyHMACwithSHA256(Encoding.Default.GetString(encrptedBuffer), Encoding.Default.GetBytes(authentication));
+                                                    string message = "Broadcast:" + Encoding.Default.GetString(hmacMes) + Encoding.Default.GetString(encrptedBuffer) + Encoding.Default.GetString(randomIV);
+                                                    byte[] hmacMessage = Encoding.Default.GetBytes(message);
+                                                    s.Send(hmacMessage);
                                                 }
-                                                byte [] encrptedBuffer= encryptWithAES128(Encoding.Default.GetString(decryptedMes),Encoding.Default.GetBytes(encryption),randomIV);
-                                                byte[] hmacMes= applyHMACwithSHA256(Encoding.Default.GetString(encrptedBuffer), Encoding.Default.GetBytes(authentication));
-                                                string message = "Broadcast:" + Encoding.Default.GetString(hmacMes) + Encoding.Default.GetString(encrptedBuffer)+randomIV;
-                                                byte[] hmacMessage = Encoding.Default.GetBytes(message);
-                                                s.Send(hmacMessage);
                                             }
+                                        }
+                                        else
+                                        {
+                                            logs.AppendText("There is no other client to send your message!");
                                         }
                                     }
                                 }
