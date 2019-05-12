@@ -334,11 +334,20 @@ namespace _432project_server
                         Console.Write(e);
                         if (!terminating)
                         {
-                            string username = socketList[client];
-                            if(username != "")
-                                logs.AppendText(username + " is disconnected \n");
-                            client.Close();
-                            socketList.Remove(client);                            
+                            try
+                            {
+                                string username = socketList[client];
+
+                                if (username != "")
+                                    logs.AppendText(username + " is disconnected \n");
+                                client.Close();
+                                socketList.Remove(client);
+                            }
+                            catch(KeyNotFoundException exc)
+                            {
+                                Console.Write(exc);
+                            }
+                            
                         }
                         else
                         {
