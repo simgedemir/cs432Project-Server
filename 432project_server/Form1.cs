@@ -237,7 +237,10 @@ namespace _432project_server
                                         }
                                         auth_sessionKey = Encoding.Default.GetString(bytes1);
                                         //encryption of the session keys
-                                        sessionKeys.Add(username, encryp_decrypt_sessionKey + auth_sessionKey);
+                                        if (sessionKeys.ContainsKey(username))
+                                            sessionKeys[username] = encryp_decrypt_sessionKey + auth_sessionKey;
+                                        else
+                                            sessionKeys.Add(username, encryp_decrypt_sessionKey + auth_sessionKey);
                                         byte[] encryptedKeys = encryptWithAES128(encryp_decrypt_sessionKey + auth_sessionKey, halfPass, challengebytes);
                                         string newMessage = message + Encoding.Default.GetString(encryptedKeys); //OK+key
                                         byte[] signature = signWithRSA(newMessage, 3072, RsaSignKeys);
@@ -337,9 +340,11 @@ namespace _432project_server
                             try
                             {
                                 string username = socketList[client];
-
                                 if (username != "")
+                                {
+                                    sessionKeys.Remove(username);
                                     logs.AppendText(username + " is disconnected \n");
+                                }
                                 client.Close();
                                 socketList.Remove(client);
                             }
